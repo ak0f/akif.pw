@@ -1,26 +1,199 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Monochrome token set. The brief is "black and white only", so the palette is
+   a pure neutral ramp with zero hue. Near-black and near-white rather than
+   #000/#fff so layered surfaces and hairlines still read as depth.
+   Page theme is locked to dark: this is a deliberate brand decision for a
+   full-bleed WebGL canvas, not a missing light mode.
+--------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #050505;
+  --bg-elev: #131313;
+  /* The footer lifts off the canvas onto its own grey surface, which closes
+     the page instead of letting it fade into the same black it opened on.
+     Light enough to read as grey, dark enough that --fg-faint still clears
+     AA against it at 5.3:1. */
+  --bg-footer: #1c1c1c;
+  --fg: #f4f4f4;
+  /* Secondary and tertiary text. Both are measured against --bg rather than
+     picked by eye: --fg-dim lands at 10.4:1 and --fg-faint at 6.4:1, so every
+     shade of text on this page clears WCAG AA at any size, and the two lighter
+     tones still read as a hierarchy. */
+  --fg-dim: #bcbcbc;
+  --fg-faint: #949494;
+  --line: rgb(244 244 244 / 0.2);
+  --line-soft: rgb(244 244 244 / 0.1);
+
+  /* z-index scale. Nothing outside this ladder. */
+  --z-canvas: 0;
+  --z-content: 10;
+  --z-progress: 40;
+  --z-nav: 50;
+  --z-grain: 60;
+  --z-menu: 70;
+  --z-preloader: 100;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-bg-footer: var(--bg-footer);
+  --color-fg: var(--fg);
+  --color-fg-dim: var(--fg-dim);
+  --color-fg-faint: var(--fg-faint);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  /* Helvetica first. Archivo sits behind it purely as the Windows/Linux
+     stand-in, because it is the closest grotesque in the stack that ships a
+     genuine 300 weight, and Arial would otherwise fake Light by rendering
+     Regular. */
+  --font-display: "Helvetica Neue", Helvetica, var(--ff-display), Arial, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-weight: 400;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Set by the cursor component itself, so the native cursor only disappears
+   once a replacement is actually on screen. */
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none;
+}
+
+/* Focus ring: visible against the canvas, monochrome, never removed. */
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   Film grain. Fixed + pointer-events-none so it never triggers repaint on the
+   scrolling containers underneath (see perf note: grain on a scroll container
+   destroys mobile FPS).
+--------------------------------------------------------------------------- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ---------------------------------------------------------------------------
+   Type primitives
+--------------------------------------------------------------------------- */
+
+/* Display type. Archivo carries a wdth axis; tightening it at huge sizes is
+   what keeps a 12vw headline from looking like stretched body copy. */
+.type-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 92%;
+  letter-spacing: -0.045em;
+  line-height: 0.85;
+  text-transform: uppercase;
+}
+
+/* Hero type. Helvetica Light, sentence case, set as large as it will go. The
+   whole hero is one line of type, so the weight has to stay thin or it reads
+   as a banner instead of a greeting. */
+.type-hero {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 0.94;
+}
+
+/* Hollow display type. On a two-colour page this is the only way to get a
+   third weight of emphasis without introducing a tint. */
+.type-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--fg);
+}
+
+@media (min-width: 768px) {
+  .type-outline {
+    -webkit-text-stroke-width: 1.5px;
+  }
+}
+
+/* Small caps label. One typeface across the whole page now, so the label is
+   separated from body copy by weight, tracking and case rather than by
+   switching to a second family. */
+.type-label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* The same treatment where a label needs to sit inline with other content. */
+.type-meta {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Masked line reveal: the child transform is clipped by this wrapper.
+
+   Deliberately sets no `display`. Word-by-word reveals need the mask to be
+   inline-block so the words still flow into a paragraph; line reveals need it
+   block. Both are single-class selectors, so declaring `display: block` here
+   would beat Tailwind's `inline-block` on source order alone and break every
+   word-mode heading onto one word per line. The caller states the display. */
+.line-mask {
+  overflow: hidden;
+  /* Reserve for descenders so g/y/p are never clipped by the mask. */
+  padding-bottom: 0.09em;
+  margin-bottom: -0.09em;
+}
+
+/* Hairline rules used to group content instead of card containers. */
+.rule {
+  border-top: 1px solid var(--line);
+}
+
+.rule-soft {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion. Every scroll-driven and looping effect collapses to static.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

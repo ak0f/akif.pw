@@ -1,0 +1,20 @@
+HOW TO RUN COMPONENT IN VSCODE
+===============================================
+ 
+1. Open the project folder in VSCode
+   File > Open Folder... > Project folder
+ 
+2. Open integrated terminal
+   Terminal > New Terminal   (or Ctrl + ` )
+ 
+3. Install dependencies (if not done yet)
+   npm install
+ 
+4. Start dev server
+   npm run dev
+ 
+5. Ctrl+Click the link in terminal, or open manually:
+   http://localhost:5173/
+ 
+6. Stop server: Ctrl + C (in terminal)
+ 
