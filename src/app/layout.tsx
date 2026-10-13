@@ -18,7 +18,7 @@ const fallback = DM_Sans({
 
 const SITE_URL = "https://akif.pw";
 const DESCRIPTION =
-  "Akif Yaylaci designs and builds websites and software for small businesses in and around Bern. Founder of SLIDE Agentur and easysolve.";
+  "Akif Yaylaci, 15, designs and builds websites and software for small businesses in and around Bern. Apprentice Informatiker EFZ, founder of SLIDE Agentur and easysolve.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
