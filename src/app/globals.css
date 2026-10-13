@@ -1,71 +1,95 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Monochrome token set. The brief is "black and white only", so the palette is
-   a pure neutral ramp with zero hue. Near-black and near-white rather than
-   #000/#fff so layered surfaces and hairlines still read as depth.
-   Page theme is locked to dark: this is a deliberate brand decision for a
-   full-bleed WebGL canvas, not a missing light mode.
+   Tokens.
+
+   A keynote stage: true black, one white, two greys. The page itself carries
+   no hue at all, so the only colour a visitor sees is the work in the project
+   frames and the blue-hour portrait. Greys are measured against #000 rather
+   than picked by eye: --fg-dim sits at 8.2:1 and --fg-faint at 5.6:1, so every
+   tone of text clears WCAG AA at any size.
+
+   Locked to dark on purpose. It is the brand, not a missing light mode.
 --------------------------------------------------------------------------- */
 :root {
-  --bg: #050505;
-  --bg-elev: #131313;
-  /* The footer lifts off the canvas onto its own grey surface, which closes
-     the page instead of letting it fade into the same black it opened on.
-     Light enough to read as grey, dark enough that --fg-faint still clears
-     AA against it at 5.3:1. */
-  --bg-footer: #1c1c1c;
-  --fg: #f4f4f4;
-  /* Secondary and tertiary text. Both are measured against --bg rather than
-     picked by eye: --fg-dim lands at 10.4:1 and --fg-faint at 6.4:1, so every
-     shade of text on this page clears WCAG AA at any size, and the two lighter
-     tones still read as a hierarchy. */
-  --fg-dim: #bcbcbc;
-  --fg-faint: #949494;
-  --line: rgb(244 244 244 / 0.2);
-  --line-soft: rgb(244 244 244 / 0.1);
+  --bg: #000000;
+  --surface: #0e0e10;
+  --fg: #f5f5f7;
+  --fg-dim: #a1a1a6;
+  --fg-faint: #86868b;
+  --line: rgb(255 255 255 / 0.17);
+  --line-soft: rgb(255 255 255 / 0.09);
+
+  /* Radius system. Media is rounded, controls are pills, and everything
+     structural (rules, meters, the brand square) stays sharp. */
+  --radius-media: 1.125rem;
+
+  /* One page gutter and one content width, used by every section. */
+  --gutter: 1.25rem;
+  --content: 82.5rem;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* z-index scale. Nothing outside this ladder. */
-  --z-canvas: 0;
-  --z-content: 10;
-  --z-progress: 40;
+  --z-sheet: 10;
   --z-nav: 50;
-  --z-grain: 60;
   --z-menu: 70;
-  --z-preloader: 100;
+  --z-intro: 100;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 2.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --radius-media: 1.75rem;
+  }
 }
 
 @theme inline {
   --color-bg: var(--bg);
-  --color-bg-elev: var(--bg-elev);
-  --color-bg-footer: var(--bg-footer);
+  --color-surface: var(--surface);
   --color-fg: var(--fg);
   --color-fg-dim: var(--fg-dim);
   --color-fg-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-line-soft: var(--line-soft);
 
-  /* Helvetica first. Archivo sits behind it purely as the Windows/Linux
-     stand-in, because it is the closest grotesque in the stack that ships a
-     genuine 300 weight, and Arial would otherwise fake Light by rendering
-     Regular. */
-  --font-display: "Helvetica Neue", Helvetica, var(--ff-display), Arial, sans-serif;
+  /* Circular first. It is a licensed face, so it only loads when its files
+     are present (see src/lib/circular.ts); until then the geometric stand-in
+     behind it carries the page. There is no monospace anywhere in this stack:
+     figures that need to line up use tabular numerals instead. */
+  --font-sans: "Circular", "Circular Std", "CircularXX", var(--ff-fallback),
+    ui-sans-serif, system-ui, sans-serif;
 
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-media: var(--radius-media);
+  --ease-out-expo: var(--ease-out-expo);
+  --ease-in-out: var(--ease-in-out);
 }
 
 html {
   background: var(--bg);
   color-scheme: dark;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-weight: 400;
-  overflow-x: hidden;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  letter-spacing: -0.006em;
+  overflow-x: clip;
 }
 
 ::selection {
@@ -73,127 +97,338 @@ body {
   color: var(--bg);
 }
 
-/* Set by the cursor component itself, so the native cursor only disappears
-   once a replacement is actually on screen. */
-.has-custom-cursor,
-.has-custom-cursor * {
-  cursor: none;
-}
-
-/* Focus ring: visible against the canvas, monochrome, never removed. */
 :focus-visible {
   outline: 2px solid var(--fg);
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
 /* ---------------------------------------------------------------------------
-   Film grain. Fixed + pointer-events-none so it never triggers repaint on the
-   scrolling containers underneath (see perf note: grain on a scroll container
-   destroys mobile FPS).
+   Type primitives. In the components layer so a utility can still override a
+   size or colour at the call site.
 --------------------------------------------------------------------------- */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-grain);
-  pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-}
+@layer components {
+  /* The greeting. Set as large as two lines will go. */
+  .type-hero {
+    font-size: clamp(3rem, 14vw, 14rem);
+    font-weight: 500;
+    letter-spacing: -0.042em;
+    line-height: 0.92;
+  }
 
-/* ---------------------------------------------------------------------------
-   Type primitives
---------------------------------------------------------------------------- */
+  /* Section headings. */
+  .type-display {
+    font-size: clamp(2.25rem, 6.2vw, 5.5rem);
+    font-weight: 500;
+    letter-spacing: -0.032em;
+    line-height: 1;
+    text-wrap: balance;
+  }
 
-/* Display type. Archivo carries a wdth axis; tightening it at huge sizes is
-   what keeps a 12vw headline from looking like stretched body copy. */
-.type-display {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-stretch: 92%;
-  letter-spacing: -0.045em;
-  line-height: 0.85;
-  text-transform: uppercase;
-}
+  /* Project names and other second-level titles. */
+  .type-title {
+    font-size: clamp(1.875rem, 4vw, 3.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+  }
 
-/* Hero type. Helvetica Light, sentence case, set as large as it will go. The
-   whole hero is one line of type, so the weight has to stay thin or it reads
-   as a banner instead of a greeting. */
-.type-hero {
-  font-family: var(--font-display);
-  font-weight: 300;
-  letter-spacing: -0.04em;
-  line-height: 0.94;
-}
+  /* The sentence under a title. */
+  .type-lead {
+    font-size: clamp(1.1875rem, 1.75vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: -0.018em;
+    line-height: 1.32;
+    color: var(--fg-dim);
+    text-wrap: pretty;
+  }
 
-/* Hollow display type. On a two-colour page this is the only way to get a
-   third weight of emphasis without introducing a tint. */
-.type-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px var(--fg);
-}
+  /* Small print: labels, captions, metadata. Sentence case and untracked. */
+  .type-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: -0.004em;
+    line-height: 1.3;
+    color: var(--fg-faint);
+  }
 
-@media (min-width: 768px) {
-  .type-outline {
-    -webkit-text-stroke-width: 1.5px;
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Page container. */
+  .wrap {
+    width: 100%;
+    max-width: calc(var(--content) + var(--gutter) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* The brand square: the full stop from the AK mark, reused as bullet,
+     marker, meter cap and closing punctuation. Always sharp, sized in em so
+     it scales with whatever type it sits in. */
+  .square {
+    display: inline-block;
+    flex: none;
+    width: 0.5em;
+    height: 0.5em;
+    background: currentColor;
+  }
+
+  /* Closing punctuation for display type: sits on the baseline like a stop. */
+  .square-stop {
+    display: inline-block;
+    width: 0.17em;
+    height: 0.17em;
+    margin-left: 0.07em;
+    background: currentColor;
+  }
+
+  /* Controls. Pills, 44px tall so they clear the touch target minimum. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--fg);
+    transition:
+      background-color 0.35s var(--ease-out-expo),
+      border-color 0.35s var(--ease-out-expo),
+      color 0.35s var(--ease-out-expo);
+  }
+
+  .btn:hover {
+    border-color: var(--fg);
+  }
+
+  .btn:active {
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  .btn-solid {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .btn-solid:hover {
+    background: #ffffff;
+    border-color: #ffffff;
+  }
+
+  .btn-solid:active {
+    background: var(--fg-dim);
+    border-color: var(--fg-dim);
+  }
+
+  /* Text link with an underline that draws in from the left. */
+  .link-draw {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    transition: background-size 0.5s var(--ease-out-expo);
+  }
+
+  .link-draw:hover,
+  .link-draw:focus-visible {
+    background-size: 100% 1px;
   }
 }
 
-/* Small caps label. One typeface across the whole page now, so the label is
-   separated from body copy by weight, tracking and case rather than by
-   switching to a second family. */
-.type-label {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-}
-
-/* The same treatment where a label needs to sit inline with other content. */
-.type-meta {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-/* Masked line reveal: the child transform is clipped by this wrapper.
-
-   Deliberately sets no `display`. Word-by-word reveals need the mask to be
-   inline-block so the words still flow into a paragraph; line reveals need it
-   block. Both are single-class selectors, so declaring `display: block` here
-   would beat Tailwind's `inline-block` on source order alone and break every
-   word-mode heading onto one word per line. The caller states the display. */
+/* Masked line reveal: the child transform is clipped by this wrapper. The
+   block padding is reserve for ascenders and descenders, which tight display
+   leading would otherwise cut off. Sets no `display`: word reveals need the
+   mask inline-block, line reveals need it block, and the caller says which. */
 .line-mask {
   overflow: hidden;
-  /* Reserve for descenders so g/y/p are never clipped by the mask. */
-  padding-bottom: 0.09em;
-  margin-bottom: -0.09em;
+  padding-block: 0.12em;
+  margin-block: -0.12em;
 }
 
-/* Hairline rules used to group content instead of card containers. */
-.rule {
-  border-top: 1px solid var(--line);
+/* Read-along text. `--p` is scroll progress through the block, `--n` the word
+   count and `--i` each word's index; a word is lit once the sweep has passed
+   it, over a seven-word ramp. The floor of 0.5 is #7a7a7b on black, 4.9:1, so
+   unread words are quiet but never illegible. With `--p` unset it resolves to
+   1 and every word is fully lit. */
+.scrub-words > p > span {
+  opacity: clamp(
+    0.5,
+    calc(0.5 + (var(--p, 1) * (var(--n) + 7) - var(--i)) * 0.0715),
+    1
+  );
 }
 
-.rule-soft {
-  border-top: 1px solid var(--line-soft);
+/* ---------------------------------------------------------------------------
+   Project reel geometry.
+
+   The window is as wide as the content column and 16:10, unless that would
+   not fit on screen with room for the header, in which case it is as tall as
+   fits and the frames crop from the bottom. Its height is worked out here in
+   CSS so the sticky offset can centre it without any measuring in script.
+--------------------------------------------------------------------------- */
+.reel {
+  --reel-width: min(calc(100vw - var(--gutter) * 2), var(--content));
+  --reel-height: min(calc(var(--reel-width) * 0.625), calc(100svh - 8.5rem));
+}
+
+.reel-window {
+  height: var(--reel-height);
+}
+
+.reel-held {
+  position: sticky;
+  top: calc((100svh - var(--reel-height)) / 2);
+}
+
+/* Held for a third of a screen per extra frame on a phone, half on a desktop,
+   where the window fills the screen and each frame has more in it. */
+.reel-run {
+  height: calc(var(--steps) * 34svh);
+}
+
+@media (min-width: 768px) {
+  .reel-run {
+    height: calc(var(--steps) * 52svh);
+  }
+}
+
+/* The sheet that carries everything after the hero and slides over it. */
+.sheet {
+  position: relative;
+  z-index: var(--z-sheet);
+  background: var(--bg);
+  border-radius: var(--radius-media) var(--radius-media) 0 0;
+  box-shadow: 0 -1px 0 0 var(--line-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Opening sequence.
+
+   The page is fully visible by default. A script in <head> sets
+   data-intro="pending" before first paint, only when scripting works and
+   motion is welcome, and that is what holds the hero back behind the curtain.
+   The Intro component moves it on to "reveal" and then "done". With no
+   JavaScript, or with reduced motion, the attribute is never set and nothing
+   here applies.
+--------------------------------------------------------------------------- */
+.intro {
+  display: none;
+}
+
+html[data-intro="pending"] .intro,
+html[data-intro="reveal"] .intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-intro);
+  pointer-events: none;
+}
+
+html[data-intro="pending"] .intro {
+  pointer-events: auto;
+}
+
+.intro-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+}
+
+.intro-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-lockup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.18em;
+  font-size: clamp(2.75rem, 7vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--fg);
+}
+
+.intro-letters {
+  display: block;
+  overflow: hidden;
+}
+
+.intro-letters > span {
+  display: block;
+  transform: translateY(110%);
+}
+
+.intro-slot {
+  display: block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-bottom: 0.06em;
+}
+
+.intro-square {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  background: var(--fg);
+  will-change: transform;
+}
+
+/* Things that wait for the curtain. `--i` staggers them. */
+.intro-rise {
+  transition: transform 1.15s var(--ease-out-expo);
+  transition-delay: calc(var(--i, 0) * 0.09s);
+}
+
+.intro-fade {
+  transition: opacity 1s ease-out;
+  transition-delay: calc(0.25s + var(--i, 0) * 0.09s);
+}
+
+html[data-intro="pending"] .intro-rise {
+  transform: translateY(112%);
+}
+
+html[data-intro="pending"] .intro-fade {
+  opacity: 0;
+}
+
+/* The stop at the end of the greeting is handed over from the flying square,
+   so it stays out of sight until that square has landed on it. */
+html[data-intro="pending"] .hero-stop,
+html[data-intro="reveal"] .hero-stop {
+  visibility: hidden;
 }
 
 /* ---------------------------------------------------------------------------
    Reduced motion. Every scroll-driven and looping effect collapses to static.
 --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+    transition-delay: 0s !important;
   }
 }

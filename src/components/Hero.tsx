@@ -1,173 +1,101 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, type CSSProperties } from "react";
+import { ArrowDown } from "@phosphor-icons/react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { gsap } from "@/lib/gsap";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { HERO_ENTRANCE } from "@/lib/timing";
+import Clock from "@/components/ui/Clock";
 
-const ENTRANCE_DURATION = 1.15;
-/** Cursor influence radius, in px. */
-const RADIUS = 190;
-/** Peak displacement at the centre of that radius, in px. */
-const STRENGTH = 46;
+const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
 
 /* ---------------------------------------------------------------------------
    Hero.
 
-   One line of Helvetica Light, bottom-anchored, with nothing else in the
-   frame. The ASCII field owns the space above it and the greeting sits on that
-   field like a caption.
+   A greeting, set as large as two lines will go, and closed with the square
+   from the mark instead of a full stop. What I do sits beside the first line
+   in the space the short word leaves open; where I am and the one action sit
+   under it. Everything above is left empty on purpose.
 
-   Each character is independently sprung away from the cursor, so the line
-   parts as the pointer moves through it and settles back with a real
-   overshoot. Springs are driven with GSAP quickTo rather than per-character
-   React state: the character count changes with locale, and one motion value
-   per glyph would mean a variable number of hooks.
+   The section is twice the height of the screen and its content is sticky,
+   so the rest of the page rises over it like a sheet while the greeting
+   settles back and dims. The entrance itself is pure CSS, keyed off the
+   data-intro state the opening sequence drives (see globals.css).
 --------------------------------------------------------------------------- */
 export default function Hero() {
   const reduce = useReducedMotion();
   const { t } = useLanguage();
-
-  const sectionRef = useRef<HTMLElement>(null);
-  const lineRef = useRef<HTMLSpanElement>(null);
-
-  // The entrance clips against a mask; the physics must not. Once the letters
-  // have landed the mask is released so displaced glyphs are never cut off.
-  const [settled, setSettled] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
-    target: sectionRef,
+    target: ref,
     offset: ["start start", "end start"],
   });
-  const opacity = useTransform(scrollYProgress, [0, 0.85], [1, 0]);
-  const lift = useTransform(scrollYProgress, [0, 1], ["0%", "-16%"]);
+  // The sheet has fully covered the hero at 0.5.
+  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.94]);
+  const opacity = useTransform(scrollYProgress, [0, 0.42], [1, 0.16]);
 
-  const entrance = reduce ? 0 : HERO_ENTRANCE;
-  const chars = Array.from(t.hero.greeting);
-
-  useEffect(() => {
-    if (reduce) {
-      setSettled(true);
-      return;
-    }
-    const id = window.setTimeout(
-      () => setSettled(true),
-      (entrance + ENTRANCE_DURATION) * 1000
-    );
-    return () => window.clearTimeout(id);
-  }, [reduce, entrance, t]);
-
-  useEffect(() => {
-    if (reduce || !settled) return;
-    const line = lineRef.current;
-    if (!line) return;
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-
-    const glyphs = Array.from(line.querySelectorAll<HTMLElement>("[data-char]"));
-    if (!glyphs.length) return;
-
-    // elastic.out gives the settle its overshoot. quickTo reuses one tween per
-    // property per glyph instead of allocating a tween on every pointer event.
-    const springs = glyphs.map((glyph) => ({
-      x: gsap.quickTo(glyph, "x", { duration: 0.9, ease: "elastic.out(1, 0.4)" }),
-      y: gsap.quickTo(glyph, "y", { duration: 0.9, ease: "elastic.out(1, 0.4)" }),
-    }));
-
-    // Offsets are measured once, relative to the line box. Each pointer event
-    // then costs a single rect read for the line itself rather than one per
-    // glyph, which keeps this off the layout-thrash path.
-    let offsets: { x: number; y: number }[] = [];
-    const measure = () => {
-      const base = line.getBoundingClientRect();
-      offsets = glyphs.map((glyph) => {
-        const r = glyph.getBoundingClientRect();
-        return {
-          x: r.left - base.left + r.width / 2,
-          y: r.top - base.top + r.height / 2,
-        };
-      });
-    };
-    measure();
-
-    const onMove = (e: PointerEvent) => {
-      const base = line.getBoundingClientRect();
-      const px = e.clientX - base.left;
-      const py = e.clientY - base.top;
-
-      for (let i = 0; i < glyphs.length; i++) {
-        const dx = offsets[i].x - px;
-        const dy = offsets[i].y - py;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < RADIUS) {
-          // Falloff is squared so the push concentrates near the cursor
-          // instead of nudging the whole line.
-          const falloff = (1 - dist / RADIUS) ** 2;
-          const n = dist || 1;
-          springs[i].x((dx / n) * falloff * STRENGTH);
-          springs[i].y((dy / n) * falloff * STRENGTH);
-        } else {
-          springs[i].x(0);
-          springs[i].y(0);
-        }
-      }
-    };
-
-    const release = () => {
-      for (const spring of springs) {
-        spring.x(0);
-        spring.y(0);
-      }
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerleave", release);
-    window.addEventListener("resize", measure);
-
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerleave", release);
-      window.removeEventListener("resize", measure);
-      gsap.killTweensOf(glyphs);
-      gsap.set(glyphs, { x: 0, y: 0 });
-    };
-  }, [reduce, settled, t]);
+  const [first, second] = t.hero.greeting;
 
   return (
-    <section
-      id="top"
-      ref={sectionRef}
-      className="relative z-10 flex min-h-[100dvh] flex-col justify-end px-5 pb-10 sm:px-10 sm:pb-14"
-    >
-      <motion.h1
-        style={reduce ? undefined : { opacity, y: lift }}
-        className="type-hero text-[clamp(2.2rem,10vw,10rem)]"
-      >
-        <span
-          ref={lineRef}
-          className={`block ${settled ? "overflow-visible" : "overflow-hidden"} pb-[0.12em] -mb-[0.12em]`}
+    <div id="top" ref={ref} className="relative h-[200svh]">
+      <section className="sticky top-0 flex h-[100svh] min-h-[34rem] flex-col justify-end pb-7 sm:pb-10">
+        <motion.div
+          style={reduce ? undefined : { scale, opacity }}
+          className="wrap origin-bottom-left"
         >
-          {chars.map((char, i) => (
-            <span key={i} data-char className="inline-block will-change-transform">
-              <motion.span
-                initial={reduce ? false : { y: "115%" }}
-                animate={{ y: "0%" }}
-                transition={{
-                  duration: ENTRANCE_DURATION,
-                  // Letters land left to right rather than all at once.
-                  delay: entrance + i * 0.035,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="inline-block"
-              >
-                {/* A literal space collapses inside an inline-block. */}
-                {char === " " ? " " : char}
-              </motion.span>
-            </span>
-          ))}
-        </span>
-      </motion.h1>
-    </section>
+          <div className="grid grid-cols-1">
+            <h1 className="type-hero col-start-1 row-start-1 max-lg:text-[clamp(3.25rem,15.5vw,9rem)]">
+              <span className="line-mask block">
+                <span className="intro-rise block" style={stagger(0)}>
+                  {first}
+                </span>
+              </span>
+              <span className="line-mask block">
+                <span className="intro-rise block" style={stagger(1)}>
+                  {second}
+                  <span
+                    data-hero-stop
+                    aria-hidden="true"
+                    className="square-stop hero-stop"
+                  />
+                </span>
+              </span>
+            </h1>
+
+            {/* Shares the heading's grid cell from lg up, pinned to its top
+                right, which is the gap the short first line leaves. Below
+                that it simply follows the heading. */}
+            <p
+              className="intro-fade type-lead col-start-1 row-start-2 mt-8 max-w-[26ch] text-fg lg:row-start-1 lg:mt-[0.5em] lg:max-w-[20rem] lg:justify-self-end xl:max-w-[24rem]"
+              style={stagger(3)}
+            >
+              {t.hero.statement}
+            </p>
+          </div>
+
+          <div
+            className="intro-fade mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5 border-t border-line-soft pt-5 sm:mt-10 sm:pt-6"
+            style={stagger(5)}
+          >
+            <p className="type-label flex items-center gap-2.5">
+              <span aria-hidden="true" className="square text-fg" />
+              <span>{t.hero.place}</span>
+              <span aria-hidden="true">·</span>
+              <Clock label={t.hero.time} />
+            </p>
+
+            <a href="#projects" className="btn btn-solid group">
+              {t.hero.cta}
+              <ArrowDown
+                size={15}
+                weight="bold"
+                aria-hidden="true"
+                className="transition-transform duration-500 ease-out-expo group-hover:translate-y-0.5"
+              />
+            </a>
+          </div>
+        </motion.div>
+      </section>
+    </div>
   );
 }

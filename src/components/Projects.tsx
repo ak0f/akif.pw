@@ -1,267 +1,189 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import Image from "next/image";
+import { useMemo } from "react";
 import { ArrowUpRight } from "@phosphor-icons/react";
-import { useReducedMotion } from "motion/react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { GITHUB_URL, SITE_PROJECTS } from "@/i18n/dictionaries";
+import { GITHUB_URL } from "@/i18n/dictionaries";
+import {
+  FEATURED_PROJECTS,
+  OTHER_PROJECTS,
+  PROJECTS,
+} from "@/data/projects";
+import { LANGUAGE_TECH } from "@/data/tech";
 import type { Repo } from "@/lib/github";
 import RevealText from "@/components/text-animation/RevealText";
-import ScrambleText from "@/components/text-animation/ScrambleText";
-
-interface Panel {
-  key: string;
-  title: string;
-  tag: string;
-  desc: string;
-  href: string;
-  meta: string;
-  image: string | null;
-}
+import SectionLabel from "@/components/ui/SectionLabel";
+import ProjectStage from "@/components/projects/ProjectStage";
+import ProjectRow from "@/components/projects/ProjectRow";
+import { TechIcon } from "@/components/projects/TechList";
 
 /* ---------------------------------------------------------------------------
    Projects.
 
-   Vertical scroll drives a horizontal pan. The lateral movement is the point:
-   work wants to be compared side by side, and panning holds the whole body of
-   it in one continuous frame instead of stacking it into a dozen separate
-   scroll events. The images counter-drift inside their frames on the same
-   scrub, so the images and their frames sit on visibly different planes.
+   Three tiers, each in the shape that suits it:
 
-   Two sources feed one track. The design and client work from akif.pw comes
-   first and carries real imagery; the repositories follow, read live from
-   GitHub. A repository has no picture, so it gets a typographic plate in the
-   same frame rather than a gap, which keeps the rhythm of the pan intact.
+   - Featured projects get a stage each: a ruled header and a reel of the real
+     site that winds as the page scrolls.
+   - Everything else curated sits in a compact list, one line per project,
+     each opening for detail.
+   - The repositories follow, read live from GitHub, so a new push appears
+     here without anyone editing the site.
 
-   Below md the hijack is switched off entirely and the panels stack, because
-   trading vertical scroll for horizontal is hostile on a touch device. The
-   position readout is desktop-only for the same reason: on mobile the page
-   scrollbar already does that job.
+   The first two come from one file, src/data/projects.ts. Adding a project is
+   adding an object there; this component never needs to change.
 --------------------------------------------------------------------------- */
 export default function Projects({ repos }: { repos: Repo[] }) {
-  const reduce = useReducedMotion();
   const { locale, t } = useLanguage();
 
-  const wrapRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const counterRef = useRef<HTMLSpanElement>(null);
-  const barRef = useRef<HTMLSpanElement>(null);
+  // A repository that already has a curated entry is not listed a second time.
+  const listed = useMemo(() => {
+    const curated = new Set(
+      PROJECTS.flatMap((project) =>
+        project.repo ? [project.repo.toLowerCase()] : []
+      )
+    );
+    return repos.filter((repo) => !curated.has(repo.name.toLowerCase()));
+  }, [repos]);
 
-  const panels = useMemo<Panel[]>(() => {
-    const formatDate = (iso: string) =>
-      new Intl.DateTimeFormat(locale, {
-        month: "short",
-        year: "numeric",
-      }).format(new Date(iso));
-
-    const site: Panel[] = SITE_PROJECTS.map((project, i) => ({
-      key: `site-${project.title}`,
-      title: project.title,
-      tag: t.projects.site[i].tag,
-      desc: t.projects.site[i].desc,
-      href: project.href,
-      meta: project.meta,
-      image: project.image,
-    }));
-
-    const code: Panel[] = repos.map((repo) => ({
-      key: `repo-${repo.name}`,
-      title: repo.name,
-      tag: repo.language ?? t.projects.repoLabel,
-      desc: repo.description ?? t.projects.noDescription,
-      href: repo.homepage ?? repo.url,
-      meta: `${t.projects.updatedLabel} ${formatDate(repo.updated)}`,
-      image: null,
-    }));
-
-    return [...site, ...code];
-  }, [repos, t, locale]);
-
-  const total = panels.length;
-
-  useEffect(() => {
-    if (reduce) return;
-    const wrap = wrapRef.current;
-    const track = trackRef.current;
-    if (!wrap || !track) return;
-
-    const mm = gsap.matchMedia();
-
-    mm.add("(min-width: 768px)", () => {
-      const distance = () => track.scrollWidth - window.innerWidth;
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: wrap,
-          start: "top top",
-          end: () => `+=${distance()}`,
-          pin: true,
-          scrub: 1,
-          invalidateOnRefresh: true,
-          // The readout is written straight to the DOM. Routing scroll
-          // progress through React state would re-render every panel a frame.
-          onUpdate: (self) => {
-            const p = self.progress;
-            if (barRef.current) {
-              barRef.current.style.transform = `scaleX(${p})`;
-            }
-            if (counterRef.current) {
-              const current = Math.min(total, Math.floor(p * total) + 1);
-              counterRef.current.textContent = String(current).padStart(2, "0");
-            }
-          },
-        },
-      });
-
-      tl.to(track, { x: () => -distance(), ease: "none" }, 0);
-      // Opposing drift inside each frame. Images are pre-scaled so the offset
-      // never exposes an edge.
-      tl.to(
-        track.querySelectorAll<HTMLElement>("[data-parallax]"),
-        { xPercent: 8, ease: "none" },
-        0
-      );
+  const formatDate = useMemo(() => {
+    const format = new Intl.DateTimeFormat(locale, {
+      month: "short",
+      year: "numeric",
     });
+    return (iso: string) => format.format(new Date(iso));
+  }, [locale]);
 
-    // Fonts and images settling can change scrollWidth after the trigger is built.
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener("load", refresh);
-
-    return () => {
-      mm.revert();
-      window.removeEventListener("load", refresh);
-    };
-  }, [reduce, t, total]);
+  const counts = [
+    t.projects.countProjects.replace("{n}", String(PROJECTS.length)),
+    ...(listed.length
+      ? [t.projects.countRepos.replace("{n}", String(listed.length))]
+      : []),
+  ];
 
   return (
-    <section
-      id="projects"
-      ref={wrapRef}
-      className="relative z-10 overflow-hidden"
-    >
-      <div
-        ref={trackRef}
-        className="flex w-full flex-col gap-16 px-5 py-24 md:h-[100dvh] md:w-max md:flex-row md:items-center md:gap-0 md:px-0 md:py-0"
-      >
-        {/* Intro panel: the section header travels with the pan. */}
-        <div className="shrink-0 md:w-[58vw] md:px-10 lg:w-[44vw]">
-          <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
-            <ScrambleText text={t.projects.eyebrow} className="type-label" />
-            <ScrambleText text={t.projects.source} className="type-label" />
-          </div>
-          <RevealText
-            as="h2"
-            text={t.projects.heading}
-            className="type-display mt-6 max-w-[12ch] text-[clamp(2rem,5.5vw,4.6rem)]"
-          />
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group mt-9 inline-flex items-center gap-3 text-fg-dim transition-colors hover:text-fg"
-          >
-            <span className="type-meta">{t.projects.viewAll}</span>
-            <ArrowUpRight
-              size={16}
-              weight="bold"
-              aria-hidden="true"
-              className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-x-0 group-hover:-translate-y-1 group-hover:translate-x-1"
+    <section id="projects" className="pt-28 pb-28 sm:pt-44 sm:pb-44">
+      <div className="wrap">
+        <header className="grid grid-cols-1 gap-x-6 gap-y-10 pb-20 sm:pb-32 md:grid-cols-12">
+          <div className="md:col-span-7">
+            <SectionLabel>{t.projects.eyebrow}</SectionLabel>
+            <RevealText
+              as="h2"
+              text={t.projects.heading}
+              className="type-display mt-7 max-w-[11ch]"
             />
-          </a>
-        </div>
-
-        {panels.map((panel, i) => (
-          <a
-            key={panel.key}
-            href={panel.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block shrink-0 md:w-[42vw] md:px-6 lg:w-[32vw]"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden bg-bg-elev md:aspect-auto md:h-[46vh]">
-              {panel.image ? (
-                <div
-                  data-parallax
-                  className="absolute inset-0 scale-[1.18] will-change-transform"
-                >
-                  <Image
-                    src={panel.image}
-                    alt={panel.title}
-                    fill
-                    sizes="(min-width: 768px) 34vw, 100vw"
-                    className="object-cover object-center grayscale contrast-[1.15] brightness-[0.85] transition-[filter] duration-700 group-hover:brightness-100"
-                  />
-                </div>
-              ) : (
-                /* Repositories have no imagery. Rather than leave a hole in
-                   the pan, the frame carries an outlined index, on the same
-                   hollow-versus-solid device the footer wordmark uses. The
-                   name is not repeated here: the caption below already has it,
-                   and a single long repo name cannot wrap to fit a frame. */
-                <div
-                  data-parallax
-                  className="absolute inset-0 flex scale-[1.08] flex-col justify-between p-7 will-change-transform"
-                >
-                  <span className="type-meta text-fg-faint">{panel.tag}</span>
-                  <span
-                    aria-hidden="true"
-                    className="type-display type-outline text-[clamp(3.5rem,8vw,6rem)] leading-none transition-colors duration-700 group-hover:text-fg"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="rule mt-5 flex items-start justify-between gap-6 pt-4">
-              <div className="min-w-0">
-                <p className="type-label">{panel.tag}</p>
-                <h3 className="type-display mt-2 text-[clamp(1.4rem,2.6vw,2.2rem)]">
-                  {panel.title}
-                </h3>
-                <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-fg-dim">
-                  {panel.desc}
-                </p>
-                <p className="type-meta mt-4 text-fg-faint">{panel.meta}</p>
-              </div>
-              <ArrowUpRight
-                size={20}
-                weight="light"
-                aria-hidden="true"
-                className="mt-1 shrink-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:-translate-y-1"
-              />
-            </div>
-          </a>
-        ))}
-
-        {/* Trailing gutter so the last panel clears the right edge. */}
-        <div aria-hidden="true" className="hidden shrink-0 md:block md:w-[10vw]" />
-      </div>
-
-      {/* Position readout. Losing your place is the standard failure of a
-          horizontal section, and this is what the section pays for the hijack. */}
-      {!reduce && total > 0 && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-8 hidden px-10 md:block"
-        >
-          <div className="mx-auto flex max-w-[1600px] items-center gap-5">
-            <span className="type-meta tabular-nums text-fg-dim">
-              <span ref={counterRef}>01</span>
-              <span className="mx-1 text-fg-faint">/</span>
-              {String(total).padStart(2, "0")}
-            </span>
-            <span className="relative h-px flex-1 bg-line">
-              <span
-                ref={barRef}
-                className="absolute inset-0 origin-left scale-x-0 bg-fg"
-              />
-            </span>
           </div>
+
+          <div className="md:col-span-4 md:col-start-9 md:self-end">
+            <p className="type-lead">{t.projects.intro}</p>
+            <p className="type-label tabular mt-6">{counts.join(" · ")}</p>
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-28 sm:gap-44">
+          {FEATURED_PROJECTS.map((project, i) => (
+            <ProjectStage
+              key={project.slug}
+              project={project}
+              position={i + 1}
+            />
+          ))}
         </div>
-      )}
+
+        {OTHER_PROJECTS.length > 0 && (
+          <div className="mt-32 grid grid-cols-1 gap-x-6 gap-y-8 sm:mt-52 md:grid-cols-12">
+            <h3 className="text-[1.375rem] leading-tight font-medium tracking-[-0.028em] md:col-span-3">
+              {t.projects.moreHeading}
+            </h3>
+            <ul className="border-b border-line md:col-span-9">
+              {OTHER_PROJECTS.map((project) => (
+                <ProjectRow key={project.slug} project={project} />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-24 grid grid-cols-1 gap-x-6 gap-y-8 sm:mt-32 md:grid-cols-12">
+          <div className="md:col-span-3">
+            <h3 className="text-[1.375rem] leading-tight font-medium tracking-[-0.028em]">
+              {t.projects.reposHeading}
+            </h3>
+            <p className="type-label mt-3 max-w-[24ch]">
+              {t.projects.reposNote}
+            </p>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-6 inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-medium"
+            >
+              <span className="link-draw">{t.projects.viewAll}</span>
+              <ArrowUpRight
+                size={15}
+                weight="bold"
+                aria-hidden="true"
+                className="transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
+            </a>
+          </div>
+
+          {listed.length > 0 ? (
+            <ul className="border-b border-line-soft md:col-span-9">
+              {listed.map((repo) => {
+                const tech = repo.language
+                  ? LANGUAGE_TECH[repo.language]
+                  : undefined;
+                return (
+                  <li key={repo.name} className="border-t border-line-soft">
+                    <a
+                      href={repo.homepage ?? repo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group grid grid-cols-12 items-baseline gap-x-6 gap-y-1.5 py-4 sm:py-5"
+                    >
+                      <span className="col-span-8 font-medium tracking-[-0.015em] md:col-span-3">
+                        <span className="link-draw">{repo.name}</span>
+                      </span>
+                      <span className="order-last col-span-12 text-[0.9375rem] text-fg-dim md:order-none md:col-span-5">
+                        {repo.description ?? t.projects.noDescription}
+                      </span>
+                      <span className="hidden items-center gap-2 self-center text-[0.9375rem] text-fg-dim md:col-span-2 md:flex">
+                        {tech ? (
+                          <TechIcon id={tech} />
+                        ) : (
+                          // No language reported: the square keeps the column aligned.
+                          <span
+                            aria-hidden="true"
+                            className="flex size-[1.125rem] items-center justify-center"
+                          >
+                            <span className="size-[0.4375rem] bg-current" />
+                          </span>
+                        )}
+                        {repo.language ?? t.projects.repoLabel}
+                      </span>
+                      <span className="type-label tabular col-span-4 flex items-center justify-end gap-2.5 self-center md:col-span-2">
+                        <span>
+                          <span className="sr-only">
+                            {t.projects.updatedLabel}{" "}
+                          </span>
+                          {formatDate(repo.updated)}
+                        </span>
+                        <ArrowUpRight
+                          size={14}
+                          weight="bold"
+                          aria-hidden="true"
+                          className="text-fg transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        />
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-fg-dim md:col-span-9">{t.projects.empty}</p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

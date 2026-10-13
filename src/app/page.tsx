@@ -1,7 +1,4 @@
-import Preloader from "@/components/Preloader";
-import AsciiBackground from "@/components/background-animation/AsciiBackground";
-import Cursor from "@/components/ui/Cursor";
-import ScrollProgress from "@/components/ui/ScrollProgress";
+import Intro from "@/components/Intro";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import Projects from "@/components/Projects";
@@ -19,21 +16,25 @@ export default async function Home() {
 
   return (
     <>
-      <Preloader />
-      <AsciiBackground />
-      <Cursor />
-      <ScrollProgress />
+      <Intro />
       <Nav />
 
-      <main className="relative">
+      <main>
         <Hero />
-        <Projects repos={repos} />
-        <Skills />
-        <About />
-        <Contact />
+
+        {/* Pulled up by one screen: the hero is two screens tall and sticky,
+            and this sheet travels over it during the second one. */}
+        <div className="sheet -mt-[100svh]">
+          <Projects repos={repos} />
+          <Skills />
+          <About />
+          <Contact />
+        </div>
       </main>
 
-      <Footer />
+      <div className="relative z-10 bg-bg">
+        <Footer />
+      </div>
     </>
   );
 }

@@ -1,106 +1,97 @@
 "use client";
 
+import { useRef } from "react";
 import { ArrowUp } from "@phosphor-icons/react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { CONTACT_EMAIL, SOCIALS } from "@/i18n/dictionaries";
+import Clock from "@/components/ui/Clock";
 
 /* ---------------------------------------------------------------------------
    Footer.
 
-   The wordmark is set hollow and fills on scroll, which closes the page on the
-   same outline-versus-solid device the kinetic band opened it with.
+   The name, at the width of the page, comes up out of the dark as the last
+   screen arrives: it is barely there when the footer enters and fully lit
+   once you have reached the end. The page opened by building a mark out of
+   nothing; it closes by lighting the name it stands for.
 --------------------------------------------------------------------------- */
 export default function Footer() {
   const reduce = useReducedMotion();
   const { t } = useLanguage();
   const year = new Date().getFullYear();
 
+  const nameRef = useRef<HTMLParagraphElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: nameRef,
+    offset: ["start end", "end end"],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.1, 1]);
+
+  const profiles = [
+    ...SOCIALS,
+    { label: "Email", handle: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
+  ];
+
   return (
-    <footer className="relative z-10 bg-bg-footer px-5 pt-16 pb-8 sm:px-10">
-      <div className="mx-auto max-w-[1600px]">
-        <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
+    <footer className="overflow-x-clip border-t border-line-soft pt-12 pb-8 sm:pt-16">
+      <div className="wrap">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           {/* Each profile carries its handle, because three of the four are
               the same handle and a bare platform name would not say so. */}
-          <ul className="flex flex-wrap items-start gap-x-10 gap-y-5">
-            {SOCIALS.map((social) => (
-              <li key={social.label}>
-                <a
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block type-meta text-fg-dim transition-colors hover:text-fg"
-                >
-                  <span className="relative">
-                    {social.label}
-                    <span
-                      aria-hidden="true"
-                      className="absolute -bottom-1 left-0 h-px w-full origin-right scale-x-0 bg-current transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:origin-left group-hover:scale-x-100"
-                    />
-                  </span>
-                  <span className="mt-2 block normal-case tracking-[0.1em] text-fg-faint transition-colors group-hover:text-fg-dim">
-                    {social.handle}
-                  </span>
-                </a>
-              </li>
-            ))}
-            <li>
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                className="group block type-meta text-fg-dim transition-colors hover:text-fg"
-              >
-                <span className="relative">
-                  Email
-                  <span
-                    aria-hidden="true"
-                    className="absolute -bottom-1 left-0 h-px w-full origin-right scale-x-0 bg-current transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:origin-left group-hover:scale-x-100"
-                  />
-                </span>
-                <span className="mt-2 block normal-case tracking-[0.1em] text-fg-faint transition-colors group-hover:text-fg-dim">
-                  {CONTACT_EMAIL}
-                </span>
-              </a>
-            </li>
+          <ul className="grid grid-cols-2 gap-x-10 gap-y-6 sm:flex sm:flex-wrap sm:gap-x-12">
+            {profiles.map((profile) => {
+              const external = profile.href.startsWith("http");
+              return (
+                <li key={profile.label}>
+                  <a
+                    href={profile.href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
+                    className="group block py-1"
+                  >
+                    <span className="link-draw text-[0.9375rem] font-medium">
+                      {profile.label}
+                    </span>
+                    <span className="type-label mt-1 block font-normal transition-colors duration-300 group-hover:text-fg-dim">
+                      {profile.handle}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
 
-          <a
-            href="#top"
-            className="group inline-flex items-center gap-2 type-meta text-fg-dim transition-colors hover:text-fg"
-          >
+          <a href="#top" className="btn group self-start">
             <ArrowUp
-              size={14}
+              size={15}
               weight="bold"
-              className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1"
+              aria-hidden="true"
+              className="transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5"
             />
             {t.footer.back}
           </a>
         </div>
 
-        {/* Oversized wordmark, hollow until it enters the frame. */}
         <motion.p
-          initial={reduce ? false : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1 }}
-          className="type-display mt-14 text-[clamp(3rem,15vw,14rem)] leading-[0.8]"
+          ref={nameRef}
+          aria-hidden="true"
+          style={reduce ? undefined : { opacity }}
+          className="mt-16 text-[clamp(2.75rem,16.4vw,16.75rem)] leading-none font-medium tracking-[-0.045em] whitespace-nowrap sm:mt-24"
         >
-          {/* The stroke is held by .type-outline; only the fill animates in. */}
-          <motion.span
-            initial={reduce ? false : { color: "rgba(244,244,244,0)" }}
-            whileInView={{ color: "rgba(244,244,244,1)" }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 1.2, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="type-outline block"
-          >
-            {t.nav.brand}
-          </motion.span>
+          {t.nav.brand}
+          <span className="square-stop" />
         </motion.p>
 
-        <div className="rule-soft mt-10 flex flex-col gap-2 pt-6 type-meta text-fg-faint sm:flex-row sm:justify-between">
-          <span>
-            {year} {t.nav.brand}
+        <div className="type-label mt-8 flex flex-col gap-2 border-t border-line-soft pt-6 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
+          <span className="tabular">
+            © {year} {t.nav.brand}. {t.footer.rights}
           </span>
-          <span>{t.footer.rights}</span>
+          <span className="flex items-center gap-2.5">
+            <span aria-hidden="true" className="square text-fg" />
+            {t.hero.place}
+            <span aria-hidden="true">·</span>
+            <Clock label={t.hero.time} />
+          </span>
         </div>
       </div>
     </footer>

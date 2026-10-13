@@ -21,24 +21,6 @@ export const SOCIALS = [
   { label: "Snapchat", handle: "akif.pw", href: "https://snapchat.com/add/akif.pw" },
 ] as const;
 
-/* Work that exists on akif.pw but never as a repository. Titles, links and
-   imagery are the same in every language; only the copy is translated, which
-   lives in each dictionary's `projects.site`, index-matched to this list. */
-export const SITE_PROJECTS = [
-  {
-    title: "Apotheke",
-    href: "https://apotheke.akif.pw",
-    image: "/projects/apotheke.png",
-    meta: "HTML, CSS, JS",
-  },
-  {
-    title: "clothinglogos",
-    href: "https://instagram.com/clothinglogos",
-    image: "/projects/clothinglogos.png",
-    meta: "Branding, Logo, Identity",
-  },
-] as const;
-
 export const skillCategories = ["it", "design", "print"] as const;
 export type SkillCategory = (typeof skillCategories)[number];
 
@@ -48,11 +30,6 @@ export interface SkillItem {
   /** Self-assessed, 0-100. Carried over from akif.pw verbatim. */
   level: number;
   category: SkillCategory;
-}
-
-interface SiteProjectCopy {
-  tag: string;
-  desc: string;
 }
 
 interface Fact {
@@ -71,7 +48,12 @@ export interface Dictionary {
     close: string;
   };
   hero: {
-    greeting: string;
+    /** Two lines. The brand square closes the second one. */
+    greeting: [string, string];
+    statement: string;
+    cta: string;
+    place: string;
+    time: string;
   };
   skills: {
     eyebrow: string;
@@ -88,10 +70,24 @@ export interface Dictionary {
   projects: {
     eyebrow: string;
     heading: string;
-    source: string;
-    site: [SiteProjectCopy, SiteProjectCopy];
+    intro: string;
+    /** "{n}" is replaced with the number. */
+    countProjects: string;
+    countRepos: string;
+    visit: string;
+    details: string;
+    close: string;
+    type: string;
+    role: string;
+    year: string;
+    stack: string;
+    status: string;
+    live: string;
+    soon: string;
+    moreHeading: string;
+    reposHeading: string;
+    reposNote: string;
     repoLabel: string;
-    liveLabel: string;
     updatedLabel: string;
     noDescription: string;
     empty: string;
@@ -109,6 +105,8 @@ export interface Dictionary {
     heading: [string, string];
     body: string;
     cta: string;
+    copy: string;
+    copied: string;
     emailLabel: string;
     phoneLabel: string;
   };
@@ -130,7 +128,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       close: "Close",
     },
     hero: {
-      greeting: "Hello, I am Akif",
+      greeting: ["Hello,", "I am Akif"],
+      statement: "I design and build websites and software for small businesses in and around Bern.",
+      cta: "See the work",
+      place: "Ostermundigen, Switzerland",
+      time: "Local time",
     },
     skills: {
       eyebrow: "Capabilities",
@@ -212,19 +214,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projects",
       heading: "Things I have built.",
-      source: "akif.pw + github.com/ak0f",
-      site: [
-        {
-          tag: "Web development",
-          desc: "A website built for a pharmacy, hand-written in HTML, CSS and JavaScript.",
-        },
-        {
-          tag: "Design",
-          desc: "A clothing brand I built the identity for, then sold the customised designs and products through Instagram.",
-        },
-      ],
+      intro: "Websites, products and brand work. Open a project for the details, or go straight to the real thing.",
+      countProjects: "{n} projects",
+      countRepos: "{n} repositories",
+      visit: "Visit",
+      details: "Details",
+      close: "Close",
+      type: "Type",
+      role: "Role",
+      year: "Year",
+      stack: "Built with",
+      status: "Status",
+      live: "Live",
+      soon: "Launching soon",
+      moreHeading: "More work",
+      reposHeading: "On GitHub",
+      reposNote: "Read live from my account, newest push first.",
       repoLabel: "Repository",
-      liveLabel: "Live site",
       updatedLabel: "Updated",
       noDescription: "No description yet.",
       empty: "GitHub could not be reached. The repositories are at github.com/ak0f.",
@@ -250,6 +256,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       heading: ["Get in", "touch."],
       body: "Email works best, and I get back to you as soon as I can. Open to design and print work, small web jobs and anything interesting in between.",
       cta: "Send me an email",
+      copy: "Copy address",
+      copied: "Copied",
       emailLabel: "Email",
       phoneLabel: "Mobile",
     },
@@ -270,7 +278,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       close: "Schliessen",
     },
     hero: {
-      greeting: "Hallo, ich bin Akif",
+      greeting: ["Hallo,", "ich bin Akif"],
+      statement: "Ich gestalte und baue Websites und Software für KMU in und um Bern.",
+      cta: "Projekte ansehen",
+      place: "Ostermundigen, Schweiz",
+      time: "Ortszeit",
     },
     skills: {
       eyebrow: "Fähigkeiten",
@@ -352,19 +364,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projekte",
       heading: "Dinge, die ich gebaut habe.",
-      source: "akif.pw + github.com/ak0f",
-      site: [
-        {
-          tag: "Webentwicklung",
-          desc: "Eine Website für eine Apotheke, von Hand in HTML, CSS und JavaScript gebaut.",
-        },
-        {
-          tag: "Design",
-          desc: "Eine Kleidermarke, für die ich die Identität gestaltet und die Produkte über Instagram verkauft habe.",
-        },
-      ],
+      intro: "Websites, Produkte und Markenarbeit. Öffne ein Projekt für die Details oder geh direkt zum Original.",
+      countProjects: "{n} Projekte",
+      countRepos: "{n} Repositories",
+      visit: "Besuchen",
+      details: "Details",
+      close: "Schliessen",
+      type: "Art",
+      role: "Rolle",
+      year: "Jahr",
+      stack: "Gebaut mit",
+      status: "Status",
+      live: "Live",
+      soon: "Geht bald live",
+      moreHeading: "Weitere Arbeiten",
+      reposHeading: "Auf GitHub",
+      reposNote: "Live aus meinem Konto gelesen, neuester Push zuerst.",
       repoLabel: "Repository",
-      liveLabel: "Live-Seite",
       updatedLabel: "Aktualisiert",
       noDescription: "Noch keine Beschreibung.",
       empty: "GitHub ist nicht erreichbar. Die Repositories liegen auf github.com/ak0f.",
@@ -390,6 +406,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       heading: ["Kontakt", "aufnehmen."],
       body: "Am besten per E-Mail, ich melde mich so schnell wie möglich zurück. Offen für Design- und Druckarbeiten, kleine Webprojekte und alles Spannende dazwischen.",
       cta: "E-Mail schreiben",
+      copy: "Adresse kopieren",
+      copied: "Kopiert",
       emailLabel: "E-Mail",
       phoneLabel: "Mobil",
     },
@@ -410,7 +428,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       close: "Kapat",
     },
     hero: {
-      greeting: "Merhaba, ben Akif",
+      greeting: ["Merhaba,", "ben Akif"],
+      statement: "Bern ve çevresindeki küçük işletmeler için web siteleri ve yazılım tasarlıyor ve geliştiriyorum.",
+      cta: "Projeleri gör",
+      place: "Ostermundigen, İsviçre",
+      time: "Yerel saat",
     },
     skills: {
       eyebrow: "Yetenekler",
@@ -492,19 +514,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projeler",
       heading: "Yaptığım işler.",
-      source: "akif.pw + github.com/ak0f",
-      site: [
-        {
-          tag: "Web geliştirme",
-          desc: "Bir eczane için elle HTML, CSS ve JavaScript ile yazılmış bir web sitesi.",
-        },
-        {
-          tag: "Tasarım",
-          desc: "Kimliğini tasarladığım ve özel ürünlerini Instagram üzerinden sattığım bir giyim markası.",
-        },
-      ],
+      intro: "Web siteleri, ürünler ve marka işleri. Ayrıntılar için bir projeyi aç ya da doğrudan aslına git.",
+      countProjects: "{n} proje",
+      countRepos: "{n} depo",
+      visit: "Ziyaret et",
+      details: "Ayrıntılar",
+      close: "Kapat",
+      type: "Tür",
+      role: "Rol",
+      year: "Yıl",
+      stack: "Kullanılanlar",
+      status: "Durum",
+      live: "Yayında",
+      soon: "Yakında yayında",
+      moreHeading: "Diğer işler",
+      reposHeading: "GitHub'da",
+      reposNote: "Hesabımdan canlı okunur, en yeni önce.",
       repoLabel: "Depo",
-      liveLabel: "Canlı site",
       updatedLabel: "Güncellendi",
       noDescription: "Henüz açıklama yok.",
       empty: "GitHub'a ulaşılamadı. Depolar github.com/ak0f adresinde.",
@@ -530,6 +556,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       heading: ["İletişime", "geç."],
       body: "En iyisi e-posta, en kısa sürede geri dönüyorum. Tasarım ve baskı işlerine, küçük web projelerine ve aradaki her ilginç şeye açığım.",
       cta: "E-posta gönder",
+      copy: "Adresi kopyala",
+      copied: "Kopyalandı",
       emailLabel: "E-posta",
       phoneLabel: "Telefon",
     },

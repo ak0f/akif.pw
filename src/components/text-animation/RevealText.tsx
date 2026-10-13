@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, type ElementType } from "react";
+import { createElement, Fragment, type ElementType } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 interface RevealTextProps {
@@ -15,7 +15,7 @@ interface RevealTextProps {
 }
 
 /* ---------------------------------------------------------------------------
-   Masked reveal used for every heading on the site.
+   Masked reveal used for the section headings.
 
    Display headlines pass an array so each line clears its own mask, which
    reads far better at 10vw than words popping individually. Body-scale
@@ -56,10 +56,10 @@ export default function RevealText({
   };
 
   const child: Variants = {
-    hidden: { y: "110%" },
+    hidden: { y: "112%" },
     visible: {
       y: "0%",
-      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 1.05, ease: [0.16, 1, 0.3, 1] },
     },
   };
 
@@ -81,19 +81,22 @@ export default function RevealText({
       className={byLine ? "block" : "inline"}
     >
       {parts.map((part, i) => (
-        <span
-          key={i}
-          className={
-            byLine
-              ? `line-mask block ${lineClassName ?? ""}`
-              : "line-mask inline-block align-bottom"
-          }
-        >
-          <motion.span variants={child} className="inline-block">
-            {part}
-            {!byLine && i < parts.length - 1 ? " " : ""}
-          </motion.span>
-        </span>
+        <Fragment key={i}>
+          <span
+            className={
+              byLine
+                ? `line-mask block ${lineClassName ?? ""}`
+                : "line-mask inline-block align-bottom"
+            }
+          >
+            <motion.span variants={child} className="inline-block">
+              {part}
+            </motion.span>
+          </span>
+          {/* The word space sits between the masks. Inside one it would be
+              trailing whitespace in an inline-block, which collapses. */}
+          {!byLine && i < parts.length - 1 ? " " : null}
+        </Fragment>
       ))}
     </motion.span>
   );
