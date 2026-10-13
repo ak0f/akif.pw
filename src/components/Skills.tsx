@@ -19,7 +19,7 @@ type SortMode = "category" | "level";
 /* ---------------------------------------------------------------------------
    Capabilities.
 
-   Ten real skills, each with the level I give myself. The number is the point
+   Real skills, each with the level I give myself. The number is the point
    of the section: claiming a skill is cheap, so the figure next to it is what
    makes the claim worth reading, and 25% stated plainly is more convincing
    than "proficient".
@@ -72,7 +72,9 @@ export default function Skills() {
             <SectionLabel>
               {t.skills.eyebrow}
               <span aria-hidden="true">·</span>
-              <span className="tabular">{t.skills.count}</span>
+              <span className="tabular">
+                {t.skills.count.replace("{n}", String(t.skills.items.length))}
+              </span>
             </SectionLabel>
             <RevealText
               as="h2"
