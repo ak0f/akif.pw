@@ -21,6 +21,7 @@ Everything about the curated projects lives in one file: [`src/data/projects.ts`
 | `url`, `displayUrl` | Where "Visit" goes, and how the link reads on the page. Every project has one. |
 | `featured` | `true` gives the project a full stage with a scrolling reel. `false` puts it in the compact list, where the row opens for detail. |
 | `frames` | Images in the order the reel plays them. The first is the cover. One frame is fine; the reel then stands still. |
+| `mobile` | Optional. The phone version of the site as one tall image (captured at 390×844 and stitched top to bottom), with its pixel `width` and `height`. Phones then show the project in a phone frame that scrolls through it; without it they get the desktop reel. |
 | `stack` | Ids from [`src/data/tech.ts`](src/data/tech.ts). Each one renders as its icon and name. |
 | `status` | `"live"`, or `"soon"` to keep the link but mark the site as not public yet. |
 | `repo` | Name of the matching GitHub repository, so it is not listed a second time. |

@@ -61,7 +61,7 @@ export default function Contact() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.5 }}
           transition={{ staggerChildren: 0.09 }}
-          className="type-hero mt-8 text-[clamp(3rem,12.5vw,12.5rem)]"
+          className="type-hero mt-8 text-[clamp(3.25rem,15.5vw,9rem)] lg:text-[clamp(3rem,12.5vw,12.5rem)]"
         >
           {lines.map((line, i) => (
             <span key={i} className="line-mask block">
@@ -88,12 +88,12 @@ export default function Contact() {
             <p className="type-label">{t.contact.emailLabel}</p>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="link-draw mt-3 inline-block text-[clamp(1.5rem,4.4vw,3.5rem)] leading-[1.1] font-medium tracking-[-0.03em]"
+              className="link-draw mt-3 inline-block text-[clamp(1.75rem,7.6vw,3.5rem)] leading-[1.1] font-medium tracking-[-0.03em] md:text-[clamp(1.5rem,4.4vw,3.5rem)]"
             >
               {CONTACT_EMAIL}
             </a>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-center">
               <a href={`mailto:${CONTACT_EMAIL}`} className="btn btn-solid group">
                 {t.contact.cta}
                 <ArrowUpRight

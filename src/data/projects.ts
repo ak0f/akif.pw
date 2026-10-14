@@ -7,6 +7,9 @@ import type { TechId } from "./tech";
    This file is the whole list. To add a project:
 
    1. Put its images in `public/projects/<slug>/` (16:10, 2400x1500 works well).
+      Optionally add `mobile.jpg`: the phone version of the site, captured at
+      390x844 and stitched top to bottom into one tall image. Phones then show
+      the project in a phone frame that scrolls through it.
    2. Add one object to PROJECTS below. TypeScript will ask for every field,
       including the copy in all three languages.
 
@@ -27,6 +30,16 @@ export interface ProjectCopy {
   role: string;
 }
 
+/** The phone viewport the `mobile` captures were taken at. */
+export const MOBILE_VIEWPORT = { width: 390, height: 844 } as const;
+
+export interface MobileCapture {
+  src: string;
+  /** Pixel size of the stitched image. */
+  width: number;
+  height: number;
+}
+
 export interface Project {
   slug: string;
   title: string;
@@ -40,6 +53,8 @@ export interface Project {
   featured: boolean;
   /** Frames in the order the reel plays them. The first one is the cover. */
   frames: string[];
+  /** The phone version of the site as one tall image, shown on phones. */
+  mobile?: MobileCapture;
   stack: TechId[];
   /** Name of the matching GitHub repository, so it is not listed twice. */
   repo?: string;
@@ -60,6 +75,7 @@ export const PROJECTS: Project[] = [
       "/projects/slide-agentur/02.jpg",
       "/projects/slide-agentur/03.jpg",
     ],
+    mobile: { src: "/projects/slide-agentur/mobile.jpg", width: 780, height: 6752 },
     stack: ["nextjs", "react", "typescript", "tailwind", "motion", "netlify"],
     copy: {
       en: {
@@ -101,6 +117,7 @@ export const PROJECTS: Project[] = [
       "/projects/indago-ai/02.jpg",
       "/projects/indago-ai/03.jpg",
     ],
+    mobile: { src: "/projects/indago-ai/mobile.jpg", width: 780, height: 6752 },
     stack: ["react", "vite", "python", "netlify"],
     copy: {
       en: {
@@ -143,6 +160,7 @@ export const PROJECTS: Project[] = [
       "/projects/easysolve/02.jpg",
       "/projects/easysolve/03.jpg",
     ],
+    mobile: { src: "/projects/easysolve/mobile.jpg", width: 780, height: 6752 },
     stack: ["nextjs", "react", "typescript", "gsap", "lenis", "netlify"],
     copy: {
       en: {

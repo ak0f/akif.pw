@@ -5,6 +5,7 @@ import { ArrowUpRight } from "@phosphor-icons/react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import type { Project } from "@/data/projects";
 import Reel from "./Reel";
+import PhoneReel from "./PhoneReel";
 import TechList from "./TechList";
 import ProjectDetails, { Collapse, ToggleMark } from "./ProjectDetails";
 
@@ -94,7 +95,21 @@ export default function ProjectStage({
         </div>
       </Collapse>
 
-      <div className="mt-10 sm:mt-14">
+      {/* Phones get the phone version of the site, in a phone, when there is
+          a capture of it. Everything wider gets the desktop reel. */}
+      {project.mobile && (
+        <div className="mt-12 md:hidden">
+          <PhoneReel
+            capture={project.mobile}
+            href={project.url}
+            label={`${t.projects.visit} ${project.title}`}
+          />
+        </div>
+      )}
+
+      <div
+        className={`mt-10 sm:mt-14 ${project.mobile ? "max-md:hidden" : ""}`}
+      >
         <Reel
           frames={project.frames}
           href={project.url}
