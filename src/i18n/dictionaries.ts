@@ -92,6 +92,12 @@ export interface Dictionary {
     noDescription: string;
     empty: string;
     viewAll: string;
+    private: string;
+    clients: string;
+    inside: string;
+    built: string;
+    partLabels: Record<"frontend" | "backend" | "database" | "hosting" | "auth", string>;
+    linkLabels: Record<"site" | "app" | "repo", string>;
   };
   about: {
     eyebrow: string;
@@ -157,7 +163,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         },
         {
           name: "Python",
-          desc: "Comfortable with the basics; wrote a few automation scripts, a game bot and a drone controller.",
+          desc: "Comfortable with the basics; wrote a few automation scripts, a game bot, a drone controller and the back end of Indago in FastAPI.",
           level: 35,
           category: "it",
         },
@@ -210,6 +216,30 @@ export const dictionaries: Record<Locale, Dictionary> = {
           category: "it",
         },
         {
+          name: "Databases & SQL",
+          desc: "PostgreSQL with Prisma, SQLite and Supabase in my projects. I design the tables and queries myself; the basics, not tuning.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Servers & Docker",
+          desc: "I run my own Ubuntu VPS over SSH with Docker and Caddy, and deploy to it by hand. Early days with operations.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Networking",
+          desc: "How IP, routing and switching fit together, practised in Cisco Packet Tracer.",
+          level: 30,
+          category: "it",
+        },
+        {
+          name: "Video editing",
+          desc: "Cutting and livestream support for YouTube projects.",
+          level: 45,
+          category: "design",
+        },
+        {
           name: "Silhouette Studio",
           desc: "Vector design and cutting-machine operation for creative projects.",
           level: 55,
@@ -250,7 +280,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projects",
       heading: "Things I have built.",
-      intro: "Websites, products and brand work. Open a project for the details, or go straight to the real thing.",
+      intro: "Websites, products, internal tools and brand work. Open a card to see what the project does, how it is built and where it runs.",
       countProjects: "{n} projects",
       countRepos: "{n} repositories",
       visit: "Visit",
@@ -271,6 +301,18 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noDescription: "No description yet.",
       empty: "GitHub could not be reached. The repositories are at github.com/ak0f.",
       viewAll: "All repositories",
+      private: "Private, not public",
+      clients: "Client work",
+      inside: "What is inside",
+      built: "Under the hood",
+      partLabels: {
+        frontend: "Front end",
+        backend: "Back end",
+        database: "Database",
+        hosting: "Hosting",
+        auth: "Sign-in",
+      },
+      linkLabels: { site: "Website", app: "App", repo: "Source code" },
     },
     about: {
       eyebrow: "About",
@@ -343,7 +385,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         },
         {
           name: "Python",
-          desc: "Vertraut mit den Grundlagen; ein paar Automatisierungsskripte, ein Game-Bot und eine Drohnensteuerung.",
+          desc: "Vertraut mit den Grundlagen; ein paar Automatisierungsskripte, ein Game-Bot, eine Drohnensteuerung und das Backend von Indago in FastAPI.",
           level: 35,
           category: "it",
         },
@@ -396,6 +438,30 @@ export const dictionaries: Record<Locale, Dictionary> = {
           category: "it",
         },
         {
+          name: "Datenbanken & SQL",
+          desc: "PostgreSQL mit Prisma, SQLite und Supabase in meinen Projekten. Tabellen und Abfragen entwerfe ich selbst; die Grundlagen, kein Tuning.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Server & Docker",
+          desc: "Ich betreibe einen eigenen Ubuntu-VPS über SSH mit Docker und Caddy und deploye von Hand. Am Anfang beim Betrieb.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Netzwerke",
+          desc: "Wie IP, Routing und Switching zusammenspielen, geübt in Cisco Packet Tracer.",
+          level: 30,
+          category: "it",
+        },
+        {
+          name: "Videoschnitt",
+          desc: "Schnitt und Livestream-Betreuung für YouTube-Projekte.",
+          level: 45,
+          category: "design",
+        },
+        {
           name: "Silhouette Studio",
           desc: "Vektordesign und Schneidemaschinen-Bedienung für kreative Projekte.",
           level: 55,
@@ -436,7 +502,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projekte",
       heading: "Dinge, die ich gebaut habe.",
-      intro: "Websites, Produkte und Markenarbeit. Öffne ein Projekt für die Details oder geh direkt zum Original.",
+      intro: "Websites, Produkte, interne Werkzeuge und Markenarbeit. Öffne eine Karte und sieh, was das Projekt kann, wie es gebaut ist und wo es läuft.",
       countProjects: "{n} Projekte",
       countRepos: "{n} Repositories",
       visit: "Besuchen",
@@ -457,6 +523,18 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noDescription: "Noch keine Beschreibung.",
       empty: "GitHub ist nicht erreichbar. Die Repositories liegen auf github.com/ak0f.",
       viewAll: "Alle Repositories",
+      private: "Privat, nicht öffentlich",
+      clients: "Kundenarbeiten",
+      inside: "Was drinsteckt",
+      built: "Unter der Haube",
+      partLabels: {
+        frontend: "Frontend",
+        backend: "Backend",
+        database: "Datenbank",
+        hosting: "Hosting",
+        auth: "Anmeldung",
+      },
+      linkLabels: { site: "Website", app: "App", repo: "Quellcode" },
     },
     about: {
       eyebrow: "Über mich",
@@ -529,7 +607,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         },
         {
           name: "Python",
-          desc: "Temellerde rahatım; birkaç otomasyon betiği, bir oyun botu ve bir drone kontrolü yazdım.",
+          desc: "Temellerde rahatım; birkaç otomasyon betiği, bir oyun botu, bir drone kontrolü ve Indago'nun FastAPI arka yüzünü yazdım.",
           level: 35,
           category: "it",
         },
@@ -582,6 +660,30 @@ export const dictionaries: Record<Locale, Dictionary> = {
           category: "it",
         },
         {
+          name: "Veritabanları ve SQL",
+          desc: "Projelerimde Prisma ile PostgreSQL, SQLite ve Supabase. Tabloları ve sorguları kendim tasarlarım; temel düzey, ince ayar değil.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Sunucu ve Docker",
+          desc: "SSH ile Docker ve Caddy kullanan kendi Ubuntu VPS'imi işletiyorum ve elle yayına alıyorum. İşletmede başlangıç düzeyi.",
+          level: 35,
+          category: "it",
+        },
+        {
+          name: "Ağlar",
+          desc: "IP, yönlendirme ve anahtarlamanın nasıl birlikte çalıştığı, Cisco Packet Tracer'da pratik yapıldı.",
+          level: 30,
+          category: "it",
+        },
+        {
+          name: "Video kurgu",
+          desc: "YouTube projeleri için kurgu ve canlı yayın desteği.",
+          level: 45,
+          category: "design",
+        },
+        {
           name: "Silhouette Studio",
           desc: "Yaratıcı projeler için vektör tasarımı ve kesim makinesi kullanımı.",
           level: 55,
@@ -622,7 +724,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     projects: {
       eyebrow: "Projeler",
       heading: "Yaptığım işler.",
-      intro: "Web siteleri, ürünler ve marka işleri. Ayrıntılar için bir projeyi aç ya da doğrudan aslına git.",
+      intro: "Web siteleri, ürünler, iç araçlar ve marka işleri. Bir kartı aç; proje ne yapıyor, nasıl yapıldı ve nerede çalışıyor göreceksin.",
       countProjects: "{n} proje",
       countRepos: "{n} depo",
       visit: "Ziyaret et",
@@ -643,6 +745,18 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noDescription: "Henüz açıklama yok.",
       empty: "GitHub'a ulaşılamadı. Depolar github.com/ak0f adresinde.",
       viewAll: "Tüm depolar",
+      private: "Özel, herkese açık değil",
+      clients: "Müşteri işleri",
+      inside: "İçinde neler var",
+      built: "Kaputun altında",
+      partLabels: {
+        frontend: "Ön yüz",
+        backend: "Arka yüz",
+        database: "Veritabanı",
+        hosting: "Barındırma",
+        auth: "Giriş",
+      },
+      linkLabels: { site: "Web sitesi", app: "Uygulama", repo: "Kaynak kodu" },
     },
     about: {
       eyebrow: "Hakkımda",
