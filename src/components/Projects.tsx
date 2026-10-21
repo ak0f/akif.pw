@@ -1,39 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { GITHUB_URL } from "@/i18n/dictionaries";
-import {
-  FEATURED_PROJECTS,
-  OTHER_PROJECTS,
-  PROJECTS,
-} from "@/data/projects";
+import { PROJECTS } from "@/data/projects";
 import { LANGUAGE_TECH } from "@/data/tech";
 import type { Repo } from "@/lib/github";
 import RevealText from "@/components/text-animation/RevealText";
 import SectionLabel from "@/components/ui/SectionLabel";
-import ProjectStage from "@/components/projects/ProjectStage";
-import ProjectRow from "@/components/projects/ProjectRow";
+import ProjectCard from "@/components/projects/ProjectCard";
 import { TechIcon } from "@/components/projects/TechList";
 
 /* ---------------------------------------------------------------------------
    Projects.
 
-   Three tiers, each in the shape that suits it:
+   Two tiers:
 
-   - Featured projects get a stage each: a ruled header and a reel of the real
-     site that winds as the page scrolls.
-   - Everything else curated sits in a compact list, one line per project,
-     each opening for detail.
+   - The curated projects are one list of cards. Each is a ruled line that
+     opens for what it does, how it is built and where it runs; one is open at
+     a time, so the section stays one card taller than its closed height.
    - The repositories follow, read live from GitHub, so a new push appears
      here without anyone editing the site.
 
-   The first two come from one file, src/data/projects.ts. Adding a project is
+   The cards come from one file, src/data/projects.ts. Adding a project is
    adding an object there; this component never needs to change.
 --------------------------------------------------------------------------- */
 export default function Projects({ repos }: { repos: Repo[] }) {
   const { locale, t } = useLanguage();
+  const [openSlug, setOpenSlug] = useState<string | null>(PROJECTS[0]?.slug ?? null);
 
   // A repository that already has a curated entry is not listed a second time.
   const listed = useMemo(() => {
@@ -79,30 +74,23 @@ export default function Projects({ repos }: { repos: Repo[] }) {
           </div>
         </header>
 
-        <div className="flex flex-col gap-28 sm:gap-44">
-          {FEATURED_PROJECTS.map((project, i) => (
-            <ProjectStage
+        <ul className="border-b border-line">
+          {PROJECTS.map((project, i) => (
+            <ProjectCard
               key={project.slug}
               project={project}
               position={i + 1}
+              open={openSlug === project.slug}
+              onToggle={() =>
+                setOpenSlug((current) =>
+                  current === project.slug ? null : project.slug
+                )
+              }
             />
           ))}
-        </div>
+        </ul>
 
-        {OTHER_PROJECTS.length > 0 && (
-          <div className="mt-32 grid grid-cols-1 gap-x-6 gap-y-8 sm:mt-52 md:grid-cols-12">
-            <h3 className="text-[1.375rem] leading-tight font-medium tracking-[-0.028em] md:col-span-3">
-              {t.projects.moreHeading}
-            </h3>
-            <ul className="border-b border-line md:col-span-9">
-              {OTHER_PROJECTS.map((project) => (
-                <ProjectRow key={project.slug} project={project} />
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="mt-24 grid grid-cols-1 gap-x-6 gap-y-8 sm:mt-32 md:grid-cols-12">
+        <div className="mt-28 grid grid-cols-1 gap-x-6 gap-y-8 sm:mt-40 md:grid-cols-12">
           <div className="md:col-span-3">
             <h3 className="text-[1.375rem] leading-tight font-medium tracking-[-0.028em]">
               {t.projects.reposHeading}
